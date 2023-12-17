@@ -1,0 +1,9 @@
+temp-sensors.elf
+temp-sensors.bin
+temp-sensors.hex
+temp-sensors.lst
+temp-sensors.map
+temp-sensors.hex
+.DS_Store
+.fuse_*
+.vscode/*
