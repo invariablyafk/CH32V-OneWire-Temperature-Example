@@ -14,10 +14,6 @@ This example demonstrates how to use a CH32V003 microcontroller to communicate w
 - The project supports `printf` debugging and gdbserver-style debugging via minichlink.
 - Building and flashing instructions can be found in the `examples/blink` directory.
 
-## Development Tools
-- Compatible with Visual Studio Code and PlatformIO for building, uploading, and debugging.
-- Supports the clangd C/C++ language server for efficient code navigation and error checking.
-
 ## Hardware Requirements
 - `SWIO` on `PD1` is required for programming/debugging.
 - `PC4` connected to DS18x20 sensor data. (Don't forget the external pull-up resistor to VCC)
