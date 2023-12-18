@@ -34,9 +34,9 @@ This example demonstrates how to use a CH32V003 microcontroller to communicate w
 - [CH32V003: Timer Interrupt](https://pallavaggarwal.in/ch32v003-timer-interrupt/)
 - [CH32V003: How to read 64-bit Unique ID](https://pallavaggarwal.in/ch32v003-how-to-read-64-bit-unique-id/)
 
-## Sensors and Maximum OneWire Library
+## Sensors and Maxim OneWire Library
 - The example is compatible with DS18S20, DS1820, DS18B20, and DS1822 temperature sensors.
-- The Maximum OneWire library is designed to efficiently handle communication with multiple sensors over a single wire.
+- The simplified Maximum OneWire library is designed to efficiently handle communication with multiple sensors over a single wire.
 
 ## Notes on CH32V003
 - The CH32V003 operates at different performance levels depending on whether it runs from RAM or FLASH due to varying wait states.
