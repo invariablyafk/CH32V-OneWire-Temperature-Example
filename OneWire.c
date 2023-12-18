@@ -190,13 +190,13 @@ void OneWireSelect(const uint8_t rom[8]);
 // another read or write.
 void OneWireWrite(uint8_t v, uint8_t power);
 
-void OneWireWrite_bytes(const uint8_t *buf, uint16_t count, bool power);
+void OneWireWriteBytes(const uint8_t *buf, uint16_t count, bool power);
 
 
 // Read a byte.
 uint8_t OneWireRead(void);
 
-void OneWireRead_bytes(uint8_t *buf, uint16_t count);
+void OneWireReadBytes(uint8_t *buf, uint16_t count);
 
 // Write a bit. The bus is always left powered at the end, see
 // note in write() about that.
@@ -373,9 +373,7 @@ void OneWireWrite(uint8_t v, uint8_t power /* = 0 */) {
     }
 }
 
-
-//void OneWireWrite_bytes(const uint8_t *buf, uint16_t count, bool power = 0)
-void OneWireWrite_bytes(const uint8_t *buf, uint16_t count, bool power) {
+void OneWireWriteBytes(const uint8_t *buf, uint16_t count, bool power) {
   for (uint16_t i = 0 ; i < count ; i++)
     OneWireWrite(buf[i], 0);
   if (!power) {
@@ -400,7 +398,7 @@ uint8_t OneWireRead() {
     return r;
 }
 
-void OneWireRead_bytes(uint8_t *buf, uint16_t count) {
+void OneWireReadBytes(uint8_t *buf, uint16_t count) {
   for (uint16_t i = 0 ; i < count ; i++)
     buf[i] = OneWireRead();
 }

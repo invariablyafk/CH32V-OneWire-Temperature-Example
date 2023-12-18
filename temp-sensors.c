@@ -154,6 +154,8 @@ int loop() {
             break;
     }
 
+    // More features, background tasks, etc can be added here.
+
     return 0;
 }
 
