@@ -3,7 +3,7 @@
  * @brief DS18B20 Temp Sensor Communication Example with Maxim OneWire interface
  * @author Tal G.
  * @license MIT License
- * @details This code demonstrates temperature measurement using DS18B20 one-wire sensors.
+ * @details This code demonstrates non-blocking temperature measurement with multiple DS18B20 one-wire sensors. 
  */
 
 #include "ch32v003fun.h"
@@ -13,6 +13,17 @@
 #include <stdbool.h>
 
 #include "OneWire.c"
+
+#define TEMP_READ_DELAY (FUNCONF_SYSTEM_CORE_CLOCK/32) // roughly one second
+
+// Constants for states
+#define FIND_SENSOR 0
+#define VALIDATE_ADDRESS 1
+#define PRINT_SENSOR_TYPE 2
+#define REQUEST_TEMPERATURE 3
+#define WAIT_FOR_SENSOR_READ 4
+#define READ_TEMPERATURE_DATA 5
+#define PRINT_TEMPERATURE_DATA 6
 
 // Function prototypes
 /**
@@ -40,7 +51,7 @@ void printSensorType(uint8_t address[8]);
  * @brief Start a temperature conversion on the DS18x20 sensor.
  * @param address The 8-byte address of the sensor.
  */
-void startTemperatureConversion(uint8_t address[8]);
+void sendTemperatureRequest(uint8_t address[8]);
 /**
  * @brief Read temperature data from the DS18x20 sensor.
  * @param address The 8-byte address of the sensor.
@@ -75,43 +86,77 @@ void printTemperatureData(uint8_t address[8], float celsius);
 void setup() {
     GPIO_port_enable(GPIO_port_C);
     GPIO_pinMode(GPIOv_from_PORT_PIN(GPIO_port_C, 4), GPIO_pinMode_O_pushPull, GPIO_Speed_50MHz);
-    printf("Starting up..");
+
+    printf("Starting up..\n\n");
+    printf("Looking for temperature sensors..\n");
 }
 
 /**
  * @brief Main loop for processing received data and serial communication.
  * This function is the main loop that performs temperature measurements using DS18B20 sensors.
  */
-void loop() {
-    uint8_t address[8];
-    uint8_t data[9];
-    float temperatureInC;
-    
-    if (!findNextSensor(address)) {
-        printf("----\n");
-        OneWireResetSearch();
-        Delay_Ms(250);
-        return;
-    }
-    
-    if (!validateAddressCRC(address)) {
-        printf("Invalid address detected!\n");
-        return;
-    }
-    
-    printSensorType(address);
-    startTemperatureConversion(address);
 
-    Delay_Ms(1000); // wait for temperature conversion to complete.
-    
-    if (!readTemperatureData(address, data)) {
-        printf("No valid temperature sent!\n");
-        return;
+uint32_t startTime = 0;
+int state = FIND_SENSOR;
+uint8_t address[8];
+uint8_t data[9];
+float temperatureInC;
+
+int loop() {
+
+    switch (state) {
+        case FIND_SENSOR:
+            if (!findNextSensor(address)) {
+                printf("----\nLooking for temperature sensors..\n");
+                Delay_Ms(250); // Not strictly needed, but slows down search loop when no sensors are found.
+                OneWireResetSearch();
+                state = FIND_SENSOR;
+            } else {
+                state = VALIDATE_ADDRESS;
+            }
+            break;
+        case VALIDATE_ADDRESS:
+            if (!validateAddressCRC(address)) {
+                printf("Sensor found, but it responded with an invalid address. Skipping.\n");
+                state = FIND_SENSOR;
+            } else {
+                state = REQUEST_TEMPERATURE;
+            }
+            break;
+        case REQUEST_TEMPERATURE:
+            sendTemperatureRequest(address);
+            state = WAIT_FOR_SENSOR_READ;
+            break;
+        case WAIT_FOR_SENSOR_READ:
+            // Delay for roughly one second between 
+            // asking for temperature and later reading it.
+            if(startTime >= TEMP_READ_DELAY) {
+                state = READ_TEMPERATURE_DATA;
+                startTime = 0;
+            } else {
+                startTime++;
+                state = WAIT_FOR_SENSOR_READ;
+            }
+            break;
+        case READ_TEMPERATURE_DATA:
+            if (!readTemperatureData(address, data)) {
+                printf("Failed to recieve temperature data.\n");
+                state = FIND_SENSOR;
+            } else {
+                temperatureInC = convertRawDataToCelsius(address, data);
+                state = PRINT_TEMPERATURE_DATA;
+            }
+            break;
+        case PRINT_TEMPERATURE_DATA:
+            printSensorType(address);
+            printTemperatureData(address, temperatureInC);
+            state = FIND_SENSOR;
+            break;
     }
-    
-    temperatureInC = convertRawDataToCelsius(address, data);
-    printTemperatureData(address, temperatureInC);
+
+    return 0;
 }
+
 
 /**
  * @brief Entry point of the program.
@@ -180,7 +225,7 @@ void printSensorType(uint8_t address[8]) {
  * @param address The 8-byte address of the sensor.
  * This function initiates a temperature conversion on the DS18x20 sensor.
  */
-void startTemperatureConversion(uint8_t address[8]) {
+void sendTemperatureRequest(uint8_t address[8]) {
     OneWireReset();
     OneWireSelect(address);
     OneWireWrite(0x44, 0);  // start conversion, with no parasite power on at the end
