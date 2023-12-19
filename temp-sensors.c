@@ -139,6 +139,9 @@ int loop() {
             }
             break;
         case READ_TEMPERATURE_DATA:
+            // The temp sensors use a slow data rate. The read 
+            // can take a few hundred milliseconds, so it will 
+            // disrupt time critical stuff like multiplexing a display.
             if (!readTemperatureData(address, data)) {
                 printf("Failed to recieve temperature data.\n");
                 state = FIND_SENSOR;
